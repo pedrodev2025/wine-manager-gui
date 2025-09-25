@@ -1,0 +1,69 @@
+#!/bin/bash
+
+WINE_BOXES="$HOME/.wine_boxes"
+mkdir -p "$WINE_BOXES"
+
+while true; do
+    ACAO=$(kdialog --title "Wine Manager" --menu "Escolha uma ação:" \
+        1 "Criar Caixa" \
+        2 "Remover Caixa" \
+        3 "Renomear Caixa" \
+        4 "Definir Executável Padrão" \
+        5 "Executar Programa" \
+        6 "Listar Caixas" \
+        7 "Sair")
+
+    [ $? -ne 0 ] && exit
+
+    case "$ACAO" in
+        1)
+            NOME=$(kdialog --inputbox "Nome da nova caixa:" "")
+            [ $? -ne 0 ] && continue
+            TIPO=$(kdialog --menu "Tipo de Caixa:" Jogos "Jogos" Aplicativos "Aplicativos" Personalizada "Personalizada")
+            [ $? -ne 0 ] && continue
+            case "$TIPO" in
+                Jogos) NUM=1 ;;
+                Aplicativos) NUM=2 ;;
+                Personalizada) NUM=3 ;;
+            esac
+            echo | wine-manager create "$NOME" <<< "$NUM"
+            kdialog --msgbox "Caixa '$NOME' criada com sucesso.";;
+        
+        2)
+            CAIXA=$(ls "$WINE_BOXES" | kdialog --menu "Selecione a caixa para remover:" $(ls "$WINE_BOXES" | awk '{print $1" "$1}'))
+            [ $? -ne 0 ] && continue
+            kdialog --yesno "Tem certeza que deseja remover '$CAIXA'?"
+            [ $? -eq 0 ] && echo s | wine-manager remove "$CAIXA";;
+
+        3)
+            CAIXA=$(ls "$WINE_BOXES" | kdialog --menu "Selecione a caixa para renomear:" $(ls "$WINE_BOXES" | awk '{print $1" "$1}'))
+            [ $? -ne 0 ] && continue
+            NOVO=$(kdialog --inputbox "Novo nome para '$CAIXA':" "$CAIXA")
+            [ $? -ne 0 ] && continue
+            mv "$WINE_BOXES/$CAIXA" "$WINE_BOXES/$NOVO"
+            kdialog --msgbox "Caixa '$CAIXA' renomeada para '$NOVO'";;
+
+        4)
+            CAIXA=$(ls "$WINE_BOXES" | kdialog --menu "Selecione a caixa para definir o executável padrão:" $(ls "$WINE_BOXES" | awk '{print $1" "$1}'))
+            [ $? -ne 0 ] && continue
+            EXE=$(kdialog --getopenfilename "$HOME" "Executáveis Windows (*.exe)")
+            [ $? -ne 0 ] && continue
+            wine-manager set-default "$CAIXA" "$EXE";;
+
+        5)
+            CAIXA=$(ls "$WINE_BOXES" | kdialog --menu "Selecione a caixa:" $(ls "$WINE_BOXES" | awk '{print $1" "$1}'))
+            [ $? -ne 0 ] && continue
+            EXE=$(kdialog --getopenfilename "$HOME" "Executáveis Windows (*.exe)")
+            [ $? -ne 0 ] && continue
+            wine-manager run "$CAIXA" "$EXE";;
+
+        6)
+            TMPFILE=$(mktemp)
+            ls "$WINE_BOXES" > "$TMPFILE"
+            kdialog --textbox "$TMPFILE" --title "Caixas"
+            rm -f "$TMPFILE";;
+
+        7)
+            exit;;
+    esac
+done
