@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Wine Manager GUI
+Comment=Wine Manager GUI
+Exec=wine-manager-gui
+Icon=wine-manager-gui
+Terminal=false
+Categories=Utility;
